@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Naranja Api SAM Template"
+
+### WIRU Pipeline Param ###
+Parameters:
+  Environment:
+    Type: String
+    Description: "Wiru environment"
+  Debug:
+    Type: String
+    Description: Debug mode for logs
+    Default: "true"
+    AllowedValues:
+    - "true"
+    - "false"
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Timeout: 30
+    MemorySize: 128
+    Environment:
+      Variables:
+        NODE_PATH: "/opt/nodejs:/opt/nodejs/node_modules:/var/runtime/node_modules"
+        NODE_ENV: !Ref Environment
+        DEBUG: !Ref Debug
+        AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR'
+
+Conditions:
+  IsProduction:
+    Fn::Equals: [Ref: Environment, prodblue]
+  DefinedDomainName: 
+    Fn::Not:
+    - Fn::Equals:
+      - Fn::FindInMap: ["Stage", Ref: Environment, "DomainName"]
+      - ""
+  CreateDomainName: 
+    Condition: DefinedDomainName
+
+
+### ENV VARS ###
+Mappings:
+  Stage:
+    develop:
+      LambdaAuth: "089125844537:function:custom_authorizer_dev"
+      DomainName: ""
+    testing:
+      LambdaAuth: "089125844537:function:custom_authorizer_tst"
+      DomainName: ""
+    staging:
+      LambdaAuth: "089125844537:function:custom_authorizer_stg"
+      DomainName: ""
+    prodblue:
+      LambdaAuth: "089125844537:function:custom_authorizer_prd"
+      DomainName: ""
+
+Resources:
+
+  ### PERSISTANCE ###
+  AccountsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: accountId
+        Type: Number
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+  ### API Gateway ###
+  ## For apigateway to generate logs, a role is required: 
+  ## https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-account.html
+  ServerlessRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      AccessLogSetting:
+        DestinationArn: !GetAtt ServerlessRestApiLogGroup.Arn
+        Format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":$context.status,"responseLatency":$context.responseLatency}'
+      StageName: !Ref Environment
+      Name: !Sub ${AWS::StackName}-api
+      OpenApiVersion: 3.0.1
+      Cors: "'*'"
+      TracingEnabled: true ## Enable X-Ray
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./swagger.yaml
+            
+  ServerlessRestApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: ServerlessRestApi
+    Properties:
+      LogGroupName: !Sub "API-Gateway-Execution-Logs_${AWS::StackName}/${Environment}"
+
+  BasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: ServerlessRestApi
+    Condition: CreateDomainName
+    Properties:
+      BasePath: "{{name}}" # Modify this to match your api path.
+      DomainName: !FindInMap [Stage, !Ref Environment, DomainName]
+      RestApiId: !Ref ServerlessRestApi
+      Stage: !Ref ServerlessRestApi.Stage
+
+  ### API Functions ###
+  GetAccountByIdFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: getAccountById.Handler
+      CodeUri: ./src/functions/getAccountById
+      Environment:
+        Variables:
+          ACCOUNTS_TABLE: !Ref AccountsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTable
+      Events:
+        HttpEvent:
+          Type: HttpApi 
+          Properties:
+            Path: /account/{accountId}
+            Method: GET
+            ApiId: !Ref ServerlessRestApi
+
+  PostAccountFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: postAccount.Handler
+      CodeUri: ./src/functions/postAccount
+      Tracing: Active
+      Environment:
+        Variables:
+          ACCOUNTS_TABLE: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AccountsTable
+      Events:
+        HttpEvent:
+          Type: HttpApi 
+          Properties:
+            Path: /account/
+            Method: POST
+            ApiId: !Ref ServerlessRestApi
+
+  DeleteAccountFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: deleteAccountById.Handler
+      CodeUri: ./src/functions/deleteAccountById
+      Environment:
+        Variables:
+          ACCOUNTS_TABLE: !Ref AccountsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AccountsTable
+      Events:
+        HttpEvent:
+          Type: HttpApi 
+          Properties:
+            Path: /account/{accountId}
+            Method: DELETE
+            ApiId: !Ref ServerlessRestApi
+
+  PutAccountFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: putAccount.Handler
+      CodeUri: ./src/functions/putAccount
+      Environment:
+        Variables:
+          ACCOUNTS_TABLE: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AccountsTable
+      Events:
+        HttpEvent:
+          Type: HttpApi 
+          Properties:
+            Path: /account/{accountId}
+            Method: PUT
+            ApiId: !Ref ServerlessRestApi
+
+  PatchAccountFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: putAccount.Handler
+      CodeUri: ./src/functions/putAccount
+      Environment:
+        Variables:
+          ACCOUNTS_TABLE: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AccountsTable
+      Events:
+        HttpEvent:
+          Type: HttpApi 
+          Properties:
+            Path: /account/{accountId}
+            Method: PATCH
+            ApiId: !Ref ServerlessRestApi

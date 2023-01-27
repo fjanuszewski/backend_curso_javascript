@@ -1,0 +1,381 @@
+openapi: 3.0.1
+info:
+  title: SAM-TEMPLATE
+  version: 1.0.0
+
+security:
+  - CustomSecurityAuthorizer: []
+
+servers:
+  - url: https://e1-<nombre-producto>.(api)naranja.com/
+    description: Develop
+  - url: https://e2-<nombre-producto>.(api)naranja.com/
+    description: Test
+  - url: https://e3-<nombre-producto>.(api)naranja.com/
+    description: Stage
+  - url: https://url-produccion.com/
+    description: Produccion
+    
+paths:
+  /account/{accountId}:
+    get:
+      security: [] ##Eliminar si se desea aplicar el authorizer
+      tags:
+      - ACCOUNTID
+      summary: Obtener cuenta por ID
+      description: Devuelve cuenta
+      operationId: getAccountById
+      parameters:
+        - name: accountId
+          in: path
+          description: ID de la cuenta a buscar
+          required: true
+          schema:
+            $ref: '#/components/schemas/accountId'
+          examples:
+            validAccountId:
+              $ref: '#/components/examples/validAccountId'
+            invalidAccountId:
+              $ref: '#/components/examples/invalidAccountId'
+      responses:
+        200:
+          description: Operación realizada con éxito
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+        500:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      security: [] ##Eliminar si se desea aplicar el authorizer
+      tags:
+      - ACCOUNT
+      summary: Actualiza una Cuenta
+      description: Actualiza una cuenta a la tabla DynamoDB
+      operationId: putAccount
+      parameters:
+        - name: accountId
+          in: path
+          description: ID de la cuenta a buscar
+          required: true
+          schema:
+            $ref: '#/components/schemas/accountId'
+          examples:
+            validAccountId:
+              $ref: '#/components/examples/validAccountId'
+            invalidAccountId:
+              $ref: '#/components/examples/invalidAccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/dataAccount'
+            examples:
+              bodyValidAccountId:
+                $ref: '#/components/examples/bodyValidDataAccount'
+              bodyInvalidAccountId:
+                $ref: '#/components/examples/bodyInvalidDataAccount'
+      responses:
+        200:
+          description: Operación realizada con éxito
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+        500:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      security: [] ##Eliminar si se desea aplicar el authorizer
+      tags:
+      - ACCOUNT
+      summary: Actualiza un atributo de una Cuenta
+      description: Actualiza un atributo de cuenta a la tabla DynamoDB
+      operationId: patchAccount
+      parameters:
+        - name: accountId
+          in: path
+          description: ID de la cuenta a buscar
+          required: true
+          schema:
+            $ref: '#/components/schemas/accountId'
+          examples:
+            validAccountId:
+              $ref: '#/components/examples/validAccountId'
+            invalidAccountId:
+              $ref: '#/components/examples/invalidAccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/dataAccountPatch'
+            examples:
+              bodyValidAccountId:
+                $ref: '#/components/examples/bodyValidAccount'
+              bodyInvalidAccountId:
+                $ref: '#/components/examples/bodyInvalidAccount'
+      responses:
+        200:
+          description: Operación realizada con éxito
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+        500:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      security: [] ##Eliminar si se desea aplicar el authorizer
+      tags:
+      - ACCOUNTID
+      summary: Eliminar cuenta por ID
+      description: Elimina una cuenta
+      operationId: deleteAccountById
+      parameters:
+        - name: accountId
+          in: path
+          description: ID de la cuenta a eliminar
+          required: true
+          schema:
+            $ref: '#/components/schemas/accountId'
+          examples:
+            validAccountId:
+              $ref: '#/components/examples/validAccountId'
+            invalidAccountId:
+              $ref: '#/components/examples/invalidAccountId'
+      responses:
+        200:
+          description: Operación realizada con éxito
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+        500:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+  /account/:
+    post:
+      security: [] ##Eliminar si se desea aplicar el authorizer
+      tags:
+      - ACCOUNT
+      summary: Agrega una Cuenta
+      description: Agrega una cuenta a la tabla DynamoDB
+      operationId: postAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/account'
+            examples:
+              bodyValidAccountId:
+                $ref: '#/components/examples/bodyValidAccount'
+              bodyInvalidAccountId:
+                $ref: '#/components/examples/bodyInvalidAccount'
+      responses:
+        200:
+          description: Operación realizada con éxito
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+        500:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  
+  examples:
+    validAccountId: 
+      value: 1234
+    invalidAccountId: 
+      value: "A1234"
+    bodyValidAccount:
+      value: {"accountId": 1234, "name":"DEMO SAM", "enable": true, "cuit": 20331234524, "email": "prueba@email.com"}
+    bodyInvalidAccount: 
+      value: {"accountId": 1234, "name":"DEMO SAM", "enable": true, "cuit": 20331234524, "email": "pruebaemail.com"}
+    bodyValidDataAccount:
+      value: {"name":"DEMO SAM", "enable": true, "cuit": 20331234524, "email": "prueba@email.com"}
+    bodyInvalidDataAccount: 
+      value: {"name":"DEMO SAM", "enable": true, "cuit": 20331234524, "email": "pruebaemail.com"}
+
+  schemas:
+    account:
+      type: object
+      required:
+      - accountId
+      - email
+      - name
+      - cuit
+      - enable
+      properties:
+        accountId: 
+          $ref: '#/components/schemas/accountId'
+        email: 
+          $ref: '#/components/schemas/email'
+        name: 
+          $ref: '#/components/schemas/name'
+        cuit: 
+          $ref: '#/components/schemas/cuit'
+        enable: 
+          $ref: '#/components/schemas/enable'
+      description: Esquema de cuenta
+      
+    dataAccount:
+      type: object
+      required:
+      - email
+      - name
+      - cuit
+      - enable
+      properties:
+        email: 
+          $ref: '#/components/schemas/email'
+        name: 
+          $ref: '#/components/schemas/name'
+        cuit: 
+          $ref: '#/components/schemas/cuit'
+        enable: 
+          $ref: '#/components/schemas/enable'
+      description: Esquema de datos de cuenta    
+    
+    dataAccountPatch:
+      type: object
+      properties:
+        email: 
+          $ref: '#/components/schemas/email'
+        name: 
+          $ref: '#/components/schemas/name'
+        cuit: 
+          $ref: '#/components/schemas/cuit'
+        enable: 
+          $ref: '#/components/schemas/enable'
+      description: Esquema de datos de cuenta
+      
+    accountId:
+      type: number
+      minLength: 1
+      maxLength: 20
+      description: Numero de cuenta 
+    email:
+      type: string
+      pattern: ^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$
+      description: Direccion de email en Account (en path tener el cuenta los caracteres especiales)
+    cuit:
+      type: number
+      minLength: 6
+      maxLength: 20
+      description: Numero cuit para la Account (Solo numeros)    
+    name:
+      type: string
+      minLength: 5
+      maxLength: 50
+      description: Nombre de fantasia de la Account (Solo texto)
+    enable:
+      type: boolean
+      description: Estado de la Account (Solo texto)
+    Error:
+      required:
+      - message
+      type: object
+      properties:
+        code:
+          type: number
+        message:
+          type: string
+  
+  securitySchemes:
+    CustomSecurityAuthorizer:
+      type: "http"
+      scheme: "bearer"
+      bearerFormat: "JWT"
+      x-amazon-apigateway-authtype: "custom"
+      x-amazon-apigateway-authorizer:
+        type: "token"
+        identitySource: "method.request.header.Authorization"
+        identityValidationExpression: '^Bearer [-0-9a-zA-Z\._]*$'
+        authorizerUri: 
+          Fn::Sub:
+            - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AuthorizerFunction}/invocations
+            - AuthorizerFunction:
+                Fn::FindInMap:
+                  - 'Stage'
+                  - Ref: 'Environment'
+                  - 'LambdaAuth'        
+x-amazon-apigateway-documentation:
+  version: 0.1
+  documentationParts:
+  - location:
+      type: API
+    properties:
+      description: SAM API
+      info:
+        description:
+          Ref: AWS::StackName
+        version: 0.1
+
+x-amazon-apigateway-request-validator: all
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  body-only:
+    validateRequestBody: true
+    validateRequestParameters: false
+  params-only:
+    validateRequestBody: false
+    validateRequestParameters: true
