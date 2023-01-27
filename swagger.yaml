@@ -7,11 +7,11 @@ security:
   - CustomSecurityAuthorizer: []
 
 servers:
-  - url: https://e1-<nombre-producto>.(api)naranja.com/
+  - url: https://e1-<nombre-producto>.(api)dominio.com/
     description: Develop
-  - url: https://e2-<nombre-producto>.(api)naranja.com/
+  - url: https://e2-<nombre-producto>.(api)dominio.com/
     description: Test
-  - url: https://e3-<nombre-producto>.(api)naranja.com/
+  - url: https://e3-<nombre-producto>.(api)dominio.com/
     description: Stage
   - url: https://url-produccion.com/
     description: Produccion

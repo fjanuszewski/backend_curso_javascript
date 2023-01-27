@@ -7,7 +7,7 @@ Creado a partir de api-sam-template.
 Para generar el primer despliegue del proyecto, se debe corroborar los siguientes elementos:
 
 1. Que la variable CICD `CI_PROJECT_NAMESPACE` este haciendo referencia a su cuenta AWS, dentro de **gitlab-ci.yml** se puede configurar. Ej: my-cuenta-nonprod, valor "my-cuenta"
-2. Si desea disponibilizar publicamente la api, debe tener un dominio de api generado y configurarlo en la variable `DomainName` dentro de los mapeos del archivo **template.yaml** Ej: e1-my-dominio.apinaranja.com en el mapping de develop
+2. Si desea disponibilizar publicamente la api, debe tener un dominio de api generado y configurarlo en la variable `DomainName` dentro de los mapeos del archivo **template.yaml** Ej: my-subdominio.dominio.com en el mapping de develop
 
 ## Esbuild
 
@@ -33,6 +33,3 @@ Se suma a este desarrollo la anatomia de templates [AWS SAM](https://docs.aws.am
 
 Ademas de la disposición del `Mappings` en ***template.yaml*** para el uso de variables estaticas de configuración.
 
-# Copyright
-
-Copyright (c) Naranja. Todos los derechos reservados.
