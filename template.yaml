@@ -7,6 +7,12 @@ Parameters:
   Environment:
     Type: String
     Description: "Wiru environment"
+  Domain:
+    Type: String
+    Description: Domain
+  SubDomain:
+    Type: String
+    Description: SubDomain
   Debug:
     Type: String
     Description: Debug mode for logs
@@ -26,34 +32,6 @@ Globals:
         NODE_ENV: !Ref Environment
         DEBUG: !Ref Debug
         AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR'
-
-Conditions:
-  IsProduction:
-    Fn::Equals: [Ref: Environment, prodblue]
-  DefinedDomainName: 
-    Fn::Not:
-    - Fn::Equals:
-      - Fn::FindInMap: ["Stage", Ref: Environment, "DomainName"]
-      - ""
-  CreateDomainName: 
-    Condition: DefinedDomainName
-
-
-### ENV VARS ###
-Mappings:
-  Stage:
-    develop:
-      LambdaAuth: "089125844537:function:custom_authorizer_dev"
-      DomainName: ""
-    testing:
-      LambdaAuth: "089125844537:function:custom_authorizer_tst"
-      DomainName: ""
-    staging:
-      LambdaAuth: "089125844537:function:custom_authorizer_stg"
-      DomainName: ""
-    prodblue:
-      LambdaAuth: "089125844537:function:custom_authorizer_prd"
-      DomainName: ""
 
 Resources:
 
@@ -97,12 +75,32 @@ Resources:
   BasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     DependsOn: ServerlessRestApi
-    Condition: CreateDomainName
-    Properties:
-      BasePath: "{{name}}" # Modify this to match your api path.
-      DomainName: !FindInMap [Stage, !Ref Environment, DomainName]
-      RestApiId: !Ref ServerlessRestApi
-      Stage: !Ref ServerlessRestApi.Stage
+    Properties:      
+      BasePath: "productos" # Modify this to match your api path.
+      DomainName: "api.fabianjanuszewski.com"
+      RestApiId:
+        Ref: ServerlessRestApi
+      Stage:
+        Ref: ServerlessRestApi.Stage
+
+  # DomainRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     AliasTarget:
+  #       DNSName:!Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessRestApi.Stage}/"
+  #       HostedZoneId: Z2FDTNDATAQYW2
+  #     HostedZoneName:
+  #       Fn::Sub: ${Domain}.
+  #     Comment:
+  #       Fn::Sub: Domain for ${AWS::StackName}
+  #     Name:
+  #       Fn::Join:
+  #       - .
+  #       - - Ref: SubDomain
+  #         - Ref: Domain
+  #     Type: A
+  #   Metadata:
+  #     SamResourceId: SiteHost
 
   ### API Functions ###
   GetAccountByIdFunction:

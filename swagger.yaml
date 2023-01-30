@@ -3,18 +3,10 @@ info:
   title: SAM-TEMPLATE
   version: 1.0.0
 
-security:
-  - CustomSecurityAuthorizer: []
 
 servers:
-  - url: https://e1-<nombre-producto>.(api)dominio.com/
+  - url: https://javascript.fabianjanuszewski.com/
     description: Develop
-  - url: https://e2-<nombre-producto>.(api)dominio.com/
-    description: Test
-  - url: https://e3-<nombre-producto>.(api)dominio.com/
-    description: Stage
-  - url: https://url-produccion.com/
-    description: Produccion
     
 paths:
   /account/{accountId}:
@@ -338,24 +330,24 @@ components:
         message:
           type: string
   
-  securitySchemes:
-    CustomSecurityAuthorizer:
-      type: "http"
-      scheme: "bearer"
-      bearerFormat: "JWT"
-      x-amazon-apigateway-authtype: "custom"
-      x-amazon-apigateway-authorizer:
-        type: "token"
-        identitySource: "method.request.header.Authorization"
-        identityValidationExpression: '^Bearer [-0-9a-zA-Z\._]*$'
-        authorizerUri: 
-          Fn::Sub:
-            - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AuthorizerFunction}/invocations
-            - AuthorizerFunction:
-                Fn::FindInMap:
-                  - 'Stage'
-                  - Ref: 'Environment'
-                  - 'LambdaAuth'        
+  # securitySchemes:
+  #   CustomSecurityAuthorizer:
+  #     type: "http"
+  #     scheme: "bearer"
+  #     bearerFormat: "JWT"
+  #     x-amazon-apigateway-authtype: "custom"
+  #     x-amazon-apigateway-authorizer:
+  #       type: "token"
+  #       identitySource: "method.request.header.Authorization"
+  #       identityValidationExpression: '^Bearer [-0-9a-zA-Z\._]*$'
+  #       authorizerUri: 
+  #         Fn::Sub:
+  #           - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AuthorizerFunction}/invocations
+  #           - AuthorizerFunction:
+  #               Fn::FindInMap:
+  #                 - 'Stage'
+  #                 - Ref: 'Environment'
+  #                 - 'LambdaAuth'        
 x-amazon-apigateway-documentation:
   version: 0.1
   documentationParts:

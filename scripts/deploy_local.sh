@@ -9,7 +9,8 @@ BUCKET=backend-curso-javascript #BUCKET IS REQUIRED FOR SAM PACKAGE
 
 STACK=backend-curso-javascript-$ENV #NAME OF STACK, IS IMPORTANT FOR THE NAME OF ALL OBJECTS IN TEMPLATE
 PROJECT=backend-curso-javascript #PROJECT NAME FOR THE TAGS
-
+DOMAIN=fabianjanuszewski.com
+SUBDOMAIN=javascript
 AWS_PROFILE=default
 
 REGION_1=us-east-1
@@ -27,7 +28,7 @@ sam build --cached
 
 echo "${YELLOW} Deploy"
 echo " ================================================= ${NC}"
-sam deploy --profile $AWS_PROFILE --s3-bucket $BUCKET --region $REGION_1 --capabilities CAPABILITY_NAMED_IAM --stack-name $STACK --tags Project=$PROJECT --parameter-overrides Project=$PROJECT Environment=$ENV
+sam deploy --no-confirm-changeset --profile $AWS_PROFILE --s3-bucket $BUCKET --region $REGION_1 --capabilities CAPABILITY_NAMED_IAM --stack-name $STACK --tags Project=$PROJECT --parameter-overrides Project=$PROJECT Environment=$ENV Domain=$DOMAIN SubDomain=$SUBDOMAIN
 
 echo "${YELLOW} Empty temporaly bucket for SAM..."
 echo " ================================================= ${NC}"
