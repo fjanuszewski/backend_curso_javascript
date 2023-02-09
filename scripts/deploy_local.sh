@@ -9,8 +9,8 @@ BUCKET=backend-curso-javascript #BUCKET IS REQUIRED FOR SAM PACKAGE
 
 STACK=backend-curso-javascript-$ENV #NAME OF STACK, IS IMPORTANT FOR THE NAME OF ALL OBJECTS IN TEMPLATE
 PROJECT=backend-curso-javascript #PROJECT NAME FOR THE TAGS
-DOMAIN=fabianjanuszewski.com
-SUBDOMAIN=javascript
+DOMAIN="fabianjanuszewski.com"
+SUBDOMAIN="api"
 AWS_PROFILE=default
 
 REGION_1=us-east-1

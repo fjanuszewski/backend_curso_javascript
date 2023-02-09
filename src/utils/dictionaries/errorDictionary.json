@@ -26,21 +26,39 @@
       }
     }
   },
-  "accountNotFound": {
+  "itemNotFound": {
     "statusCode": 400,
     "body": {
       "error": {
-        "code": "account-not-found",
-        "message": "AccountId no encontrado"
+        "code": "item-not-found",
+        "message": "ItemId no encontrado"
       }
     }
   },
-  "accountAlreadyExist": {
+  "userNotFound": {
     "statusCode": 400,
     "body": {
       "error": {
-        "code": "account-already-exist",
-        "message": "AccountId ya existente"
+        "code": "user-not-found",
+        "message": "UserId no encontrado"
+      }
+    }
+  },
+  "itemAlreadyExist": {
+    "statusCode": 400,
+    "body": {
+      "error": {
+        "code": "item-already-exist",
+        "message": "ItemId ya existente"
+      }
+    }
+  },
+  "userAlreadyExist": {
+    "statusCode": 400,
+    "body": {
+      "error": {
+        "code": "user-already-exist",
+        "message": "UserId ya existente"
       }
     }
   }

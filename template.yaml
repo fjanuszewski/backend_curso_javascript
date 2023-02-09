@@ -7,12 +7,6 @@ Parameters:
   Environment:
     Type: String
     Description: "Wiru environment"
-  Domain:
-    Type: String
-    Description: Domain
-  SubDomain:
-    Type: String
-    Description: SubDomain
   Debug:
     Type: String
     Description: Debug mode for logs
@@ -25,186 +19,372 @@ Globals:
   Function:
     Runtime: nodejs16.x
     Timeout: 30
-    MemorySize: 128
+    MemorySize: 128      
+    Tracing: Active
     Environment:
       Variables:
         NODE_PATH: "/opt/nodejs:/opt/nodejs/node_modules:/var/runtime/node_modules"
         NODE_ENV: !Ref Environment
         DEBUG: !Ref Debug
         AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR'
+        LAMBDA_INSIGHTS_LOG_LEVEL: info
+    Layers:
+      - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
 
 Resources:
 
   ### PERSISTANCE ###
-  AccountsTable:
+  UsersTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
       PrimaryKey:
-        Name: accountId
-        Type: Number
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+        Name: userId
+        Type: String
+  SessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - 
+          AttributeName: "sessionId"
+          AttributeType: "S"
+        - 
+          AttributeName: "student"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "sessionId"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "student"
+          KeySchema:
+            -
+              AttributeName: "student"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - 
+          AttributeName: "itemId"
+          AttributeType: "S"
+        - 
+          AttributeName: "student"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "itemId"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "student"
+          KeySchema:
+            -
+              AttributeName: "student"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   ### API Gateway ###
   ## For apigateway to generate logs, a role is required: 
   ## https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-account.html
-  ServerlessRestApi:
+  DemoServerlessRestApi:
     Type: AWS::Serverless::Api
     Properties:
       AccessLogSetting:
-        DestinationArn: !GetAtt ServerlessRestApiLogGroup.Arn
+        DestinationArn: !GetAtt DemoServerlessRestApiLogGroup.Arn
         Format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":$context.status,"responseLatency":$context.responseLatency}'
       StageName: !Ref Environment
       Name: !Sub ${AWS::StackName}-api
       OpenApiVersion: 3.0.1
       Cors: "'*'"
       TracingEnabled: true ## Enable X-Ray
-      DefinitionBody:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./swagger.yaml
             
-  ServerlessRestApiLogGroup:
+  DemoServerlessRestApiLogGroup:
     Type: AWS::Logs::LogGroup
-    DependsOn: ServerlessRestApi
+    DependsOn: DemoServerlessRestApi
     Properties:
       LogGroupName: !Sub "API-Gateway-Execution-Logs_${AWS::StackName}/${Environment}"
 
   BasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
-    DependsOn: ServerlessRestApi
+    DependsOn: DemoServerlessRestApi
     Properties:      
-      BasePath: "productos" # Modify this to match your api path.
+      BasePath: "34165" # Modify this to match your api path.      DomainName: "api.fabianjanuszewski.com"
       DomainName: "api.fabianjanuszewski.com"
       RestApiId:
-        Ref: ServerlessRestApi
+        Ref: DemoServerlessRestApi
       Stage:
-        Ref: ServerlessRestApi.Stage
-
-  # DomainRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Properties:
-  #     AliasTarget:
-  #       DNSName:!Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessRestApi.Stage}/"
-  #       HostedZoneId: Z2FDTNDATAQYW2
-  #     HostedZoneName:
-  #       Fn::Sub: ${Domain}.
-  #     Comment:
-  #       Fn::Sub: Domain for ${AWS::StackName}
-  #     Name:
-  #       Fn::Join:
-  #       - .
-  #       - - Ref: SubDomain
-  #         - Ref: Domain
-  #     Type: A
-  #   Metadata:
-  #     SamResourceId: SiteHost
+        Ref: DemoServerlessRestApi.Stage
 
   ### API Functions ###
-  GetAccountByIdFunction:
+  GetItemByIdFunction:
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
     Properties:
-      Handler: getAccountById.Handler
-      CodeUri: ./src/functions/getAccountById
+      Handler: getItemById.Handler
+      CodeUri: ./src/functions/getItemById
       Environment:
         Variables:
-          ACCOUNTS_TABLE: !Ref AccountsTable
+          ITEMS_TABLE: !Ref ItemsTable
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !Ref AccountsTable
+            TableName: !Ref ItemsTable
       Events:
         HttpEvent:
-          Type: HttpApi 
+          Type: Api 
           Properties:
-            Path: /account/{accountId}
+            Path: /item/{itemId}
             Method: GET
-            ApiId: !Ref ServerlessRestApi
-
-  PostAccountFunction:
+            RestApiId:
+              Ref: DemoServerlessRestApi
+    ### API Functions ###
+  GetItemsFunction:
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
     Properties:
-      Handler: postAccount.Handler
-      CodeUri: ./src/functions/postAccount
-      Tracing: Active
+      Handler: getItems.Handler
+      CodeUri: ./src/functions/getItems
       Environment:
         Variables:
-          ACCOUNTS_TABLE: !Ref AccountsTable
+          ITEMS_TABLE: !Ref ItemsTable
+      Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - DynamoDBReadPolicy:
+            TableName: !Ref ItemsTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /item/
+            Method: GET
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  PostItemFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: postItem.Handler
+      CodeUri: ./src/functions/postItem
+      Environment:
+        Variables:
+          ITEMS_TABLE: !Ref ItemsTable
       Policies:
         - DynamoDBWritePolicy:
-            TableName: !Ref AccountsTable
+            TableName: !Ref ItemsTable
       Events:
         HttpEvent:
-          Type: HttpApi 
+          Type: Api 
           Properties:
-            Path: /account/
+            Path: /item/
             Method: POST
-            ApiId: !Ref ServerlessRestApi
-
-  DeleteAccountFunction:
+            RestApiId:
+              Ref: DemoServerlessRestApi
+  DeleteItemFunction:
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
     Properties:
-      Handler: deleteAccountById.Handler
-      CodeUri: ./src/functions/deleteAccountById
+      Handler: deleteItemById.Handler
+      CodeUri: ./src/functions/deleteItemById
       Environment:
         Variables:
-          ACCOUNTS_TABLE: !Ref AccountsTable
+          USERS_TABLE: !Ref ItemsTable
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref AccountsTable
+            TableName: !Ref ItemsTable
       Events:
         HttpEvent:
-          Type: HttpApi 
+          Type: Api 
           Properties:
-            Path: /account/{accountId}
+            Path: /items/{itemId}
             Method: DELETE
-            ApiId: !Ref ServerlessRestApi
+            RestApiId:
+              Ref: DemoServerlessRestApi
 
-  PutAccountFunction:
+  PutItemFunction:
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
     Properties:
-      Handler: putAccount.Handler
-      CodeUri: ./src/functions/putAccount
+      Handler: putItem.Handler
+      CodeUri: ./src/functions/putItem
       Environment:
         Variables:
-          ACCOUNTS_TABLE: !Ref AccountsTable
+          USERS_TABLE: !Ref ItemsTable
       Policies:
         - DynamoDBWritePolicy:
-            TableName: !Ref AccountsTable
+            TableName: !Ref ItemsTable
       Events:
         HttpEvent:
-          Type: HttpApi 
+          Type: Api 
           Properties:
-            Path: /account/{accountId}
+            Path: /items/{itemId}
             Method: PUT
-            ApiId: !Ref ServerlessRestApi
+            RestApiId:
+              Ref: DemoServerlessRestApi
 
-  PatchAccountFunction:
+  GetUserByIdFunction:
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
     Properties:
-      Handler: putAccount.Handler
-      CodeUri: ./src/functions/putAccount
+      Handler: getUserById.Handler
+      CodeUri: ./src/functions/getUserById
       Environment:
         Variables:
-          ACCOUNTS_TABLE: !Ref AccountsTable
+          USERS_TABLE: !Ref UsersTable
       Policies:
-        - DynamoDBWritePolicy:
-            TableName: !Ref AccountsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
       Events:
         HttpEvent:
-          Type: HttpApi 
+          Type: Api 
           Properties:
-            Path: /account/{accountId}
+            Path: /user/{userId}
+            Method: GET
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  PostUserFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: postUser.Handler
+      CodeUri: ./src/functions/postUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref UsersTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /user/
+            Method: POST
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  DeleteUserFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: deleteUserById.Handler
+      CodeUri: ./src/functions/deleteUserById
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /user/{userId}
+            Method: DELETE
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  PutUserFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: putUser.Handler
+      CodeUri: ./src/functions/putUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref UsersTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /user/{userId}
+            Method: PUT
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  PatchUserFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: putUser.Handler
+      CodeUri: ./src/functions/putUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref UsersTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /user/{userId}
             Method: PATCH
-            ApiId: !Ref ServerlessRestApi
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  GenerateTokenFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      Handler: generateToken.Handler
+      CodeUri: ./src/functions/generateToken
+      Environment:
+        Variables:
+          SESSIONS_TABLE: !Ref SessionsTable
+          USERS_TABLE: !Ref UsersTable
+          COMISION: "34165"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SessionsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        HttpEvent:
+          Type: Api 
+          Properties:
+            Path: /session/
+            Method: POST
+            RestApiId:
+              Ref: DemoServerlessRestApi
+
+  LambdaMemoryHigh:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: Lambda Memory to High
+      MetricName: memory_utilization
+      Namespace: LambdaInsights
+      Statistic: Maximum
+      Period: '60'
+      EvaluationPeriods: '1'
+      Threshold: '80'
+      Dimensions:
+        - Name: function_name
+          Value: !Ref MyLambda
+      ComparisonOperator: GreaterThanThreshold
