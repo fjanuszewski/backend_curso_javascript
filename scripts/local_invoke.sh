@@ -6,4 +6,4 @@ echo "================== Build =================="
 sam build -c -p
 
 echo "================== Start API =================="
-sam local start-api --parameter-overrides Environment=$NODE_ENV --profile sc-nonprod --region us-east-1 -n ./scripts/localenvs.json
+sam local start-api --parameter-overrides Environment=$NODE_ENV --profile default --region us-east-1 -n ./scripts/localenvs.json

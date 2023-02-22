@@ -37,9 +37,9 @@ exports.Handler = async (event) => {
     }
     const params = event.pathParameters;
     log.info("PARAMS", params);
-    AWSXRay.captureFunc('annotations', function(subsegment) {
-      subsegment?.addAnnotation('itemId', params.itemId);
-    });
+    // AWSXRay.captureFunc('annotations', function(subsegment) {
+    //   subsegment?.addAnnotation('itemId', params.itemId);
+    // });
     const resultJoi = schemaItemId.validate(params.itemId);
     if (resultJoi.error) {
       return responseFactory.error('invalidParams');

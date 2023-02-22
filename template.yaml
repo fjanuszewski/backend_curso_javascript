@@ -139,6 +139,7 @@ Resources:
         Variables:
           ITEMS_TABLE: !Ref ItemsTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBReadPolicy:
             TableName: !Ref ItemsTable
       Events:
@@ -184,6 +185,7 @@ Resources:
         Variables:
           ITEMS_TABLE: !Ref ItemsTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBWritePolicy:
             TableName: !Ref ItemsTable
       Events:
@@ -203,15 +205,16 @@ Resources:
       CodeUri: ./src/functions/deleteItemById
       Environment:
         Variables:
-          USERS_TABLE: !Ref ItemsTable
+          ITEMS_TABLE: !Ref ItemsTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemsTable
       Events:
         HttpEvent:
           Type: Api 
           Properties:
-            Path: /items/{itemId}
+            Path: /item/{itemId}
             Method: DELETE
             RestApiId:
               Ref: DemoServerlessRestApi
@@ -225,15 +228,16 @@ Resources:
       CodeUri: ./src/functions/putItem
       Environment:
         Variables:
-          USERS_TABLE: !Ref ItemsTable
+          ITEMS_TABLE: !Ref ItemsTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBWritePolicy:
             TableName: !Ref ItemsTable
       Events:
         HttpEvent:
           Type: Api 
           Properties:
-            Path: /items/{itemId}
+            Path: /item/
             Method: PUT
             RestApiId:
               Ref: DemoServerlessRestApi
@@ -249,6 +253,7 @@ Resources:
         Variables:
           USERS_TABLE: !Ref UsersTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBReadPolicy:
             TableName: !Ref UsersTable
       Events:
@@ -271,6 +276,7 @@ Resources:
         Variables:
           USERS_TABLE: !Ref UsersTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBWritePolicy:
             TableName: !Ref UsersTable
       Events:
@@ -293,6 +299,7 @@ Resources:
         Variables:
           USERS_TABLE: !Ref UsersTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
       Events:
@@ -315,13 +322,14 @@ Resources:
         Variables:
           USERS_TABLE: !Ref UsersTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBWritePolicy:
             TableName: !Ref UsersTable
       Events:
         HttpEvent:
           Type: Api 
           Properties:
-            Path: /user/{userId}
+            Path: /user/
             Method: PUT
             RestApiId:
               Ref: DemoServerlessRestApi
@@ -337,6 +345,7 @@ Resources:
         Variables:
           USERS_TABLE: !Ref UsersTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBWritePolicy:
             TableName: !Ref UsersTable
       Events:
@@ -361,6 +370,7 @@ Resources:
           USERS_TABLE: !Ref UsersTable
           COMISION: "34165"
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref SessionsTable
         - DynamoDBReadPolicy:
@@ -386,5 +396,7 @@ Resources:
       Threshold: '80'
       Dimensions:
         - Name: function_name
-          Value: !Ref MyLambda
+          Value: !Ref GetItemByIdFunction
       ComparisonOperator: GreaterThanThreshold
+
+  #TODO HACER TODO CON UN EVENT PARA QUE SE CREEN LAS ALARMAS AUTOMATICAMENTE

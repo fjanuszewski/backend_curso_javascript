@@ -1,6 +1,6 @@
 {
-    "GetAccountByIdFunction": {
-        "USERS_TABLE": "develop-sam-template-AccountsTable-FA1UE6H9FE8Y"
+    "GetItemByIdFunction": {
+        "ITEMS_TABLE": "develop-sam-template-AccountsTable-FA1UE6H9FE8Y"
     },
     "PostAccountFunction": {
         "USERS_TABLE": "develop-sam-template-AccountsTable-FA1UE6H9FE8Y"

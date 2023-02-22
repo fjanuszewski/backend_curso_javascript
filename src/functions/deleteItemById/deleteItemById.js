@@ -8,7 +8,7 @@ const AWSXRay = require('aws-xray-sdk');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
 
-const deleteItem = async (userId) => {
+const deleteItem = async (itemId) => {
   const dynamoDbClient = new DynamoDBClient({});
   AWSXRay.captureAWSv3Client(dynamoDbClient);
   const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
@@ -18,8 +18,8 @@ const deleteItem = async (userId) => {
     const result = await dynamodbDocumentClient.send(
       new DeleteCommand({
         TableName: process.env.ITEMS_TABLE,
-        Key: { userId },
-        ConditionExpression: 'attribute_exists(userId)',
+        Key: { itemId },
+        ConditionExpression: 'attribute_exists(itemId)',
       })
     );
     return result;
@@ -39,11 +39,11 @@ exports.Handler = async (event) => {
     AWSXRay.captureFunc('annotations', function(subsegment) {
       subsegment?.addAnnotation('itemId', params.itemId);
     });
-    const resultJoi = schemaItemId.validate(Number(params.userId));
+    const resultJoi = schemaItemId.validate(params.itemId);
     if (resultJoi.error) {
       return responseFactory.error('invalidParams');
     }
-    const resultDynamoDB = await deleteItem(Number(params.userId));
+    const resultDynamoDB = await deleteItem(params.itemId);
     if (resultDynamoDB.$metadata.httpStatusCode == 400 && !resultDynamoDB.Attributes) {
       return responseFactory.error('itemNotFound');
     }
