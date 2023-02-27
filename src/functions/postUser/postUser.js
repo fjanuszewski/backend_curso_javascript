@@ -2,7 +2,6 @@
 const responseFactory = require('../../utils/response');
 const log = require('lambda-log');
 const lodash = require('lodash');
-
 const AWSXRay = require('aws-xray-sdk');
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -13,13 +12,13 @@ AWSXRay.captureAWSv3Client(dynamoDbClient);
 const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
 AWSXRay.captureAWSv3Client(dynamodbDocumentClient);
 
-const putAccount = async (account) => {
+const putUser = async (user) => {
   try {
     const result = await dynamodbDocumentClient.send(
       new PutCommand({
         TableName: process.env.USERS_TABLE,
-        Item: account,
-        ConditionExpression: 'attribute_not_exists(accountId)',
+        Item: user,
+        ConditionExpression: 'attribute_not_exists(userId)',
       })
     );
     return result;
@@ -40,12 +39,12 @@ exports.Handler = async (event, context) => {
     const body = JSON.parse(event.body);
 
     // AWSXRay.captureFunc('annotations', function(subsegment) {
-    //   subsegment.addAnnotation('AccountId', body.accountId);
+    //   subsegment.addAnnotation('UserId', body.userId);
     // });
 
-    const resultDynamoDB = await putAccount(body);
+    const resultDynamoDB = await putUser(body);
     if (resultDynamoDB.$metadata.httpStatusCode == 400) {
-      return responseFactory.error('accountAlreadyExist');
+      return responseFactory.error('userAlreadyExist');
     }
     return responseFactory.response(resultDynamoDB);
   } catch (error) {

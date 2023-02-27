@@ -1,11 +1,18 @@
 //@ts-check
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const {
+  DynamoDBClient
+} = require('@aws-sdk/client-dynamodb');
+const {
+  DynamoDBDocumentClient,
+  PutCommand
+} = require('@aws-sdk/lib-dynamodb');
 
 const responseFactory = require('../../utils/response');
 const log = require('lambda-log');
 const lodash = require('lodash');
-const { schemaItemId } = require('../../utils/schemas/item');
+const {
+  schemaItemId
+} = require('../../utils/schemas/item');
 const AWSXRay = require('aws-xray-sdk');
 
 const putItem = async (item) => {
@@ -14,6 +21,7 @@ const putItem = async (item) => {
     AWSXRay.captureAWSv3Client(dynamoDbClient);
     const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
     AWSXRay.captureAWSv3Client(dynamodbDocumentClient);
+    log.info('PARAMS DYNAMODB', item)
     const result = await dynamodbDocumentClient.send(
       new PutCommand({
         TableName: process.env.ITEMS_TABLE,
@@ -21,6 +29,7 @@ const putItem = async (item) => {
         ConditionExpression: 'attribute_exists(itemId)',
       })
     );
+    log.info('RESPUESTA DYNAMODB', result)
     return result;
   } catch (error) {
     if (error.$metadata.httpStatusCode < 500) return error;
@@ -32,16 +41,11 @@ exports.Handler = async (event) => {
   log.options.debug = process.env.DEBUG == 'true';
   log.info('START', event);
   try {
-    if (lodash.isEmpty(event) || lodash.isEmpty(event.body) || lodash.isEmpty(event.pathParameters)) {
+    if (lodash.isEmpty(event) || lodash.isEmpty(event.body)) {
       return responseFactory.error('emptyParams');
     }
-    const params = event.pathParameters;
-    const resultJoi = schemaItemId.validate(Number(params.itemId));
-    if (resultJoi.error) {
-      return responseFactory.error('invalidParams');
-    }
+
     const data = JSON.parse(event.body);
-    data.itemId = Number(params.itemId);
     const resultDynamoDB = await putItem(data);
     if (resultDynamoDB.$metadata.httpStatusCode == 400) {
       return responseFactory.error('itemNotFound');

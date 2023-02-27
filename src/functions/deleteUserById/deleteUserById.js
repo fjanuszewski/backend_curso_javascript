@@ -2,12 +2,12 @@
 const responseFactory = require('../../utils/response');
 const log = require('lambda-log');
 const lodash = require('lodash');
-const { schemaAccountId } = require('../../utils/schemas/account');
+const { schemaUserId } = require('../../utils/schemas/user');
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
 
-const deleteAccount = async (accountId) => {
+const deleteUser = async (userId) => {
   const dynamoDbClient = new DynamoDBClient({});
   const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
 
@@ -15,8 +15,8 @@ const deleteAccount = async (accountId) => {
     const result = await dynamodbDocumentClient.send(
       new DeleteCommand({
         TableName: process.env.USERS_TABLE,
-        Key: { accountId },
-        ConditionExpression: 'attribute_exists(accountId)',
+        Key: { userId },
+        ConditionExpression: 'attribute_exists(userId)',
       })
     );
     return result;
@@ -33,16 +33,19 @@ exports.Handler = async (event) => {
       return responseFactory.error('emptyParams');
     }
     const params = event.pathParameters;
-    const resultJoi = schemaAccountId.validate(Number(params.accountId));
+    const resultJoi = schemaUserId.validate(params.userId);
     if (resultJoi.error) {
       return responseFactory.error('invalidParams');
     }
-    const resultDynamoDB = await deleteAccount(Number(params.accountId));
+    const resultDynamoDB = await deleteUser(params.userId);
     if (resultDynamoDB.$metadata.httpStatusCode == 400 && !resultDynamoDB.Attributes) {
-      return responseFactory.error('accountNotFound');
+      return responseFactory.error('userNotFound');
     }
     return responseFactory.response(resultDynamoDB);
   } catch (error) {
+    if (error.$metadata.httpStatusCode == 400 && !error.Attributes) {
+      return responseFactory.error('userNotFound');
+    }
     log.error(error);
     return responseFactory.error(error);
   }

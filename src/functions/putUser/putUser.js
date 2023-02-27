@@ -5,17 +5,17 @@ const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const responseFactory = require('../../utils/response');
 const log = require('lambda-log');
 const lodash = require('lodash');
-const { schemaAccountId } = require('../../utils/schemas/account');
+const { schemaUserId } = require('../../utils/schemas/user');
 
-const putAccount = async (account) => {
+const putUser = async (user) => {
   try {
     const dynamoDbClient = new DynamoDBClient({});
     const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
     const result = await dynamodbDocumentClient.send(
       new PutCommand({
         TableName: process.env.USERS_TABLE,
-        Item: account,
-        ConditionExpression: 'attribute_exists(accountId)',
+        Item: user,
+        ConditionExpression: 'attribute_exists(userId)',
       })
     );
     return result;
@@ -29,19 +29,13 @@ exports.Handler = async (event) => {
   log.options.debug = process.env.DEBUG == 'true';
   log.info('START', event);
   try {
-    if (lodash.isEmpty(event) || lodash.isEmpty(event.body) || lodash.isEmpty(event.pathParameters)) {
+    if (lodash.isEmpty(event) || lodash.isEmpty(event.body)) {
       return responseFactory.error('emptyParams');
     }
-    const params = event.pathParameters;
-    const resultJoi = schemaAccountId.validate(Number(params.accountId));
-    if (resultJoi.error) {
-      return responseFactory.error('invalidParams');
-    }
     const data = JSON.parse(event.body);
-    data.accountId = Number(params.accountId);
-    const resultDynamoDB = await putAccount(data);
+    const resultDynamoDB = await putUser(data);
     if (resultDynamoDB.$metadata.httpStatusCode == 400) {
-      return responseFactory.error('accountNotFound');
+      return responseFactory.error('userNotFound');
     }
     return responseFactory.response(resultDynamoDB);
   } catch (error) {

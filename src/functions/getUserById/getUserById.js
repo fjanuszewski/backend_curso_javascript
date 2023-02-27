@@ -1,13 +1,20 @@
 //@ts-check
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const {
+  DynamoDBClient
+} = require('@aws-sdk/client-dynamodb');
+const {
+  DynamoDBDocumentClient,
+  GetCommand
+} = require('@aws-sdk/lib-dynamodb');
 
 const responseFactory = require('../../utils/response');
 const log = require('lambda-log');
 const lodash = require('lodash');
-const { schemaAccountId } = require('../../utils/schemas/account');
+const {
+  schemaUserId
+} = require('../../utils/schemas/user');
 
-const getAccount = async (accountId) => {
+const getUser = async (userId) => {
   const dynamoDbClient = new DynamoDBClient({});
   const dynamodbDocumentClient = DynamoDBDocumentClient.from(dynamoDbClient);
 
@@ -15,7 +22,9 @@ const getAccount = async (accountId) => {
     const result = await dynamodbDocumentClient.send(
       new GetCommand({
         TableName: process.env.USERS_TABLE,
-        Key: { accountId },
+        Key: {
+          userId
+        },
       })
     );
 
@@ -33,14 +42,17 @@ exports.Handler = async (event) => {
       return responseFactory.error('emptyParams');
     }
     const params = event.pathParameters;
-    const resultJoi = schemaAccountId.validate(Number(params.accountId));
+    const resultJoi = schemaUserId.validate(params.userId);
     if (resultJoi.error) {
       return responseFactory.error('invalidParams');
     }
-    const resultDynamoDB = await getAccount(Number(params.accountId));
-    if (!resultDynamoDB) return responseFactory.error('accountNotFound');
+    const resultDynamoDB = await getUser(params.userId);
+    if (!resultDynamoDB) return responseFactory.error('usertNotFound');
     return responseFactory.response(resultDynamoDB);
   } catch (error) {
+    if (error.$metadata.httpStatusCode == 400 && !error.Attributes) {
+      return responseFactory.error('userNotFound');
+    }
     log.error(error);
     return responseFactory.error(error);
   }
