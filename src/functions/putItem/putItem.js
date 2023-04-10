@@ -32,6 +32,7 @@ const putItem = async (item) => {
     log.info('RESPUESTA DYNAMODB', result)
     return result;
   } catch (error) {
+    console.error('ERROR EN DYNAMODB', error)
     if (error.$metadata.httpStatusCode < 500) return error;
     throw error;
   }
@@ -45,6 +46,10 @@ exports.Handler = async (event) => {
       return responseFactory.error('emptyParams');
     }
 
+    AWSXRay.captureFunc('annotations', function(subsegment) {
+      subsegment?.addAnnotation('itemId', event.body.itemId);
+    });
+    
     const data = JSON.parse(event.body);
     const resultDynamoDB = await putItem(data);
     if (resultDynamoDB.$metadata.httpStatusCode == 400) {

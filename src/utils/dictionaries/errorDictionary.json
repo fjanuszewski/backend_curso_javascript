@@ -61,5 +61,14 @@
         "message": "UserId ya existente"
       }
     }
+  },
+  "datoExistente": {
+    "statusCode": 400,
+    "body": {
+      "error": {
+        "code": "dato-existente",
+        "message": "Dato ya existente"
+      }
+    }
   }
 }
