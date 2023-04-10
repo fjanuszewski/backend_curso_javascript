@@ -46,10 +46,13 @@ exports.Handler = async (event) => {
       return responseFactory.error('emptyParams');
     }
 
+<<<<<<< HEAD
     AWSXRay.captureFunc('annotations', function(subsegment) {
       subsegment?.addAnnotation('itemId', event.body.itemId);
     });
     
+=======
+>>>>>>> 7c64a7dbd9eb01264764678d17e2870b780bca39
     const data = JSON.parse(event.body);
     const resultDynamoDB = await putItem(data);
     if (resultDynamoDB.$metadata.httpStatusCode == 400) {
